@@ -58,11 +58,11 @@ async function RunAudit(): Promise<{ markdown: string, vulnerabilities: number }
   let markdown = "";
   const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(await Exec("npm", [ "audit", "--json" ]));
   core.setOutput('total-dependencies', totalDependencies);
-  markdown += `Total Dependencies: ${totalDependencies}\n`;
+  markdown += `Total Dependencies: **${totalDependencies}**\n`;
   const totalVulnerabilities = vulnerabilities.low + vulnerabilities.moderate + vulnerabilities.high + vulnerabilities.critical;
   core.setOutput('total-vulnerabilities', totalVulnerabilities);
   markdown += `<details>\n`;
-  markdown += `<summary>Vulnerabilities: ${totalVulnerabilities}</summary>\n`;
+  markdown += `<summary>Vulnerabilities: **${totalVulnerabilities}**</summary>\n\n`;
   markdown += '| Root Cause | Path | Severity | Vulnerability |\n';
   markdown += '|--|--|--|--|\n';
   const advisoryIds = Object.keys(advisories);
@@ -87,7 +87,7 @@ async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
   const outdatedOutput = JSON.parse(await Exec("npm", [ "outdated", "--json" ]));
   const outdatedPackages = Object.keys(outdatedOutput);
   markdown += `<details>\n`;
-  markdown += `<summary>Outdated Packages: ${outdatedPackages.length}</summary>\n`;
+  markdown += `<summary>Outdated Packages: **${outdatedPackages.length}**</summary>\n\n`;
   markdown += '| Package | Current | Wanted | Latest |\n';
   markdown += `|--|--|--|--|\n`;
   for (const outdatedPackage of outdatedPackages) {
