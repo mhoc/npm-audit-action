@@ -64,14 +64,18 @@ async function RunAudit(): Promise<{ markdown: string, vulnerabilities: number }
   core.setOutput('total-vulnerabilities', totalVulnerabilities);
   markdown += `<details>\n`;
   markdown += `<summary>Vulnerabilities: ${totalVulnerabilities}</summary>\n\n`;
-  markdown += '| Root Cause | Path | Severity | Vulnerability |\n';
-  markdown += '|--|--|--|--|\n';
   const advisoryIds = Object.keys(advisories);
-  for (const advisoryId of advisoryIds) {
-    const advisory = advisories[advisoryId];
-    markdown += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
+  if (advisoryIds.length === 0) {
+    markdown += 'No vulnerability disclosures found :smile:\n';
+  } else {
+    markdown += '| Root Cause | Path | Severity | Vulnerability |\n';
+    markdown += '|--|--|--|--|\n';
+    for (const advisoryId of advisoryIds) {
+      const advisory = advisories[advisoryId];
+      markdown += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
+    }
+    markdown += "> to observe and fix vulnerabilities, run `npm audit`\n";
   }
-  markdown += "> to observe and fix vulnerabilities, run `npm audit`\n";
   markdown += `</details>\n`;
   return { 
     markdown, 
@@ -89,13 +93,17 @@ async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
   const outdatedPackages = Object.keys(outdatedOutput);
   markdown += `<details>\n`;
   markdown += `<summary>Outdated Packages: ${outdatedPackages.length}</summary>\n\n`;
-  markdown += '| Package | Current | Wanted | Latest |\n';
-  markdown += `|--|--|--|--|\n`;
-  for (const outdatedPackage of outdatedPackages) {
-    const { current, wanted, latest } = outdatedOutput[outdatedPackage];
-    markdown += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
+  if (outdatedPackages.length === 0) {
+    markdown += 'No outdated packages found :smile:\n';
+  } else {
+    markdown += '| Package | Current | Wanted | Latest |\n';
+    markdown += `|--|--|--|--|\n`;
+    for (const outdatedPackage of outdatedPackages) {
+      const { current, wanted, latest } = outdatedOutput[outdatedPackage];
+      markdown += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
+    }
+    markdown += '> to observe and update outdated packages, run `npm outdated`\n';
   }
-  markdown += '> to observe and update outdated packages, run `npm outdated`\n';
   markdown += `</details>\n`;
   return {
     markdown,
