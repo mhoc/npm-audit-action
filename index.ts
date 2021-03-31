@@ -14,6 +14,7 @@ const githubToken = process.env.GITHUB_TOKEN;
 // Inputs |
 // --------
 
+const elide = core.getInput("elide") ? Number(core.getInput("elide")) : 0;
 const shouldPrComment = core.getInput('comment-pr') === 'true';
 
 try {
@@ -33,15 +34,19 @@ try {
     const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(auditOutput);
 
     core.setOutput('total-dependencies', totalDependencies);
-    prComment += `Total Dependencies: ${totalDependencies}\n`;
+    prComment += `## Total Dependencies: ${totalDependencies}\n`;
     
     const totalVulnerabilities = vulnerabilities.low + vulnerabilities.moderate + vulnerabilities.high + vulnerabilities.critical;
     core.setOutput('total-vulnerabilities', totalVulnerabilities);
     prComment += `### Vulnerabilities (${totalVulnerabilities})\n`;
-    prComment += '| Root Cause Dep | First-Level Dep | Severity | Title |\n';
+    prComment += '| Root Cause | Path | Severity | Vulnerability |\n';
     prComment += '|--|--|--|--|\n';
     const advisoryIds = Object.keys(advisories);
-    for (const advisoryId of advisoryIds) {
+    for (let advisoryn = 0; advisoryn < advisoryIds.length; advisoryn++) {
+      if (elide > 0 && advisoryn > elide) {
+        break;
+      }
+      const advisoryId = advisoryIds[advisoryn];
       const advisory = advisories[advisoryId];
       prComment += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
     }
@@ -59,7 +64,11 @@ try {
       prComment += `### Outdated Packages (${outdatedPackageNames.length})\n`;
       prComment += '| Package | Current | Wanted | Latest |\n';
       prComment += `|--|--|--|--|\n`;
-      for (const outdatedPackage of outdatedPackageNames) {
+      for (let outdatedPackageNamesn = 0; outdatedPackageNamesn < outdatedPackageNames.length; outdatedPackageNamesn++) {
+        if (elide > 0 && outdatedPackageNamesn > elide) {
+          break;
+        }
+        const outdatedPackage = outdatedPackageNames[outdatedPackageNamesn];
         const { current, wanted, latest } = outdatedOutputObj[outdatedPackage];
         prComment += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
       }
