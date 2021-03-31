@@ -50,7 +50,7 @@ try {
       const advisory = advisories[advisoryId];
       prComment += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
     }
-    prComment += '\n';
+    prComment += "> to observe and fix issues, run `npm audit`\n\n";
 
     const proc2 = child.spawn("npm", ["outdated", "--json"]);
     let outdatedOutput = "";
@@ -72,7 +72,11 @@ try {
         const { current, wanted, latest } = outdatedOutputObj[outdatedPackage];
         prComment += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
       }
-      prComment += `\n`;
+      prComment += '> to observe and update outdated packages, run `npm outdated`\n\n';
+
+      if (elide > 0) {
+        prComment += "> some results may be elided for brevity.";
+      }
 
       if (shouldPrComment) {
         if (!githubToken) {
