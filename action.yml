@@ -1,0 +1,16 @@
+name: npm audit
+author: Mike Hockerman (@mhoc)
+description: runs an analysis of your nodejs dependencies and provides the results
+runs:
+  using: node12
+  main: index.js
+inputs:
+  comment-pr:
+    description: provide 'true' or 'false' to control whether the action should comment the results back to the pull request.
+    required: false
+    default: "true"
+outputs:
+  total-dependencies:
+    description: the total number of transitive dependencies your project has
+  total-vulnerabilities:
+    description: the total number of open vulnerabilities your project has

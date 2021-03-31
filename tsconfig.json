@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "incremental": true,
+    "inlineSourceMap": true,
+    "lib": [
+      "es5",
+      "es2015",
+      "es2016",
+      "es2017",
+      "es2018",
+      "esnext.asynciterable"
+    ],
+    "module": "commonjs",
+    "noUnusedLocals": true,
+    "strict": true,
+    "target": "es2017",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "exclude": ["node_modules"],
+  "include": ["*.ts"]
+}
