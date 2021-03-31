@@ -14,86 +14,131 @@ const githubToken = process.env.GITHUB_TOKEN;
 // Inputs |
 // --------
 
-const elide = core.getInput("elide") ? Number(core.getInput("elide")) : 0;
 const shouldPrComment = core.getInput('comment-pr') === 'true';
+const failOnOutdated = core.getInput('fail-on-outdated') === 'true';
+const failOnVulnerability = core.getInput('fail-on-vulnerability') === 'true';
+
+// ---------------------------------
+// Exec helper to run sub-commands |
+// ---------------------------------
+
+function Exec(command: string, args: string[]): Promise<string> {
+  return new Promise((res, rej) => {
+    const proc = child.spawn(command, args);
+    let output = "";
+    proc.stdout.on("data", (d) => { output += d.toString() });
+    proc.on("close", () => res(output));
+  });
+}
+
+// ------------------------
+// Env & Input Validation |
+// ------------------------
+
+if (githubEventName !== "pull_request") {
+  core.setFailed('this action can only run in response to pull request events; GITHUB_EVENT_NAME !== pull_request');
+  process.exit(1);
+}
+
+if (!githubRepository) {
+  core.setFailed('action was not ran in the context of a github repository; GITHUB_REPOSITORY env not provided');
+  process.exit(1);
+}
+
+if (!githubToken) {
+  core.setFailed("GITHUB_TOKEN not found");
+  process.exit(1);
+}
+
+// --------------
+// Audit Runner |
+// --------------
+
+async function RunAudit(): Promise<{ markdown: string, vulnerabilities: number }> {
+  let markdown = "";
+  const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(await Exec("npm", [ "audit", "--json" ]));
+  core.setOutput('total-dependencies', totalDependencies);
+  markdown += `Total Dependencies: ${totalDependencies}\n`;
+  const totalVulnerabilities = vulnerabilities.low + vulnerabilities.moderate + vulnerabilities.high + vulnerabilities.critical;
+  core.setOutput('total-vulnerabilities', totalVulnerabilities);
+  markdown += `<details>\n`;
+  markdown += `<summary>Vulnerabilities: ${totalVulnerabilities}</summary>\n`;
+  markdown += '| Root Cause | Path | Severity | Vulnerability |\n';
+  markdown += '|--|--|--|--|\n';
+  const advisoryIds = Object.keys(advisories);
+  for (const advisoryId of advisoryIds) {
+    const advisory = advisories[advisoryId];
+    markdown += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
+  }
+  markdown += "> to observe and fix vulnerabilities, run `npm audit`\n";
+  markdown += `</details>\n`;
+  return { 
+    markdown, 
+    vulnerabilities: totalVulnerabilities,
+  };
+}
+
+// -----------------
+// Outdated Runner |
+// -----------------
+
+async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
+  let markdown = "";
+  const outdatedOutput = JSON.parse(await Exec("npm", [ "outdated", "--json" ]));
+  const outdatedPackages = Object.keys(outdatedOutput);
+  markdown += `<details>\n`;
+  markdown += `<summary>Outdated Packages: ${outdatedPackages.length}</summary>\n`;
+  markdown += '| Package | Current | Wanted | Latest |\n';
+  markdown += `|--|--|--|--|\n`;
+  for (const outdatedPackage of outdatedPackages) {
+    const { current, wanted, latest } = outdatedOutput[outdatedPackage];
+    markdown += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
+  }
+  markdown += '> to observe and update outdated packages, run `npm outdated`\n';
+  markdown += `</details>\n`;
+  return {
+    markdown,
+    outdated: outdatedPackages.length,
+  };
+}
+
+// ------
+// Main |
+// ------
+
+async function Main(): Promise<void> {
+  let markdown = "";
+  const { markdown: auditMarkdown, vulnerabilities } = await RunAudit();
+  markdown += auditMarkdown;
+  const { markdown: outdatedMarkdown, outdated } = await RunOutdated();
+  markdown += outdatedMarkdown;
+  if (shouldPrComment) {
+    const prNumber = github.context.payload.pull_request!.number;
+    const octokit = github.getOctokit(githubToken!);
+    const [owner, repo] = githubRepository!.split("/");
+    await octokit.issues.createComment({
+      body: markdown,
+      issue_number: prNumber!,
+      owner,
+      repo,
+    });
+  }
+  if (failOnOutdated && outdated > 0) {
+    core.setFailed(`${outdated} package(s) are outdated`);
+    process.exit(1);
+  }
+  if (failOnVulnerability && vulnerabilities > 0) {
+    core.setFailed(`${vulnerabilities} vulerabilitie(s) were found in this project's dependencies`);
+    process.exit(1);
+  }
+}
+
+// ----------------------------------------
+// Bootstrap Into Async and handle errors |
+// ----------------------------------------
 
 try {
-  if (githubEventName !== "pull_request") {
-    throw new Error('this action can only run in response to pull request events; GITHUB_EVENT_NAME !== pull_request');
-  }
-  if (!githubRepository) {
-    throw new Error('action was not ran in the context of a github repository; GITHUB_REPOSITORY env not provided');
-  }
-  let auditOutput = "";
-  let prComment = "";
-  const proc = child.spawn("npm", ["audit", "--json"]);
-  proc.stdout.on("data", (d) => {
-    auditOutput += d.toString();
-  });
-  proc.on("close", () => {
-    const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(auditOutput);
-
-    core.setOutput('total-dependencies', totalDependencies);
-    prComment += `## Total Dependencies: ${totalDependencies}\n`;
-    
-    const totalVulnerabilities = vulnerabilities.low + vulnerabilities.moderate + vulnerabilities.high + vulnerabilities.critical;
-    core.setOutput('total-vulnerabilities', totalVulnerabilities);
-    prComment += `### Vulnerabilities (${totalVulnerabilities})\n`;
-    prComment += '| Root Cause | Path | Severity | Vulnerability |\n';
-    prComment += '|--|--|--|--|\n';
-    const advisoryIds = Object.keys(advisories);
-    for (let advisoryn = 0; advisoryn < advisoryIds.length; advisoryn++) {
-      if (elide > 0 && advisoryn > elide) {
-        break;
-      }
-      const advisoryId = advisoryIds[advisoryn];
-      const advisory = advisories[advisoryId];
-      prComment += `| ${advisory.module_name} | ${advisory.findings[0].paths[0]} | ${advisory.severity} | ${advisory.title} |\n`;
-    }
-    prComment += "> to observe and fix issues, run `npm audit`\n\n";
-
-    const proc2 = child.spawn("npm", ["outdated", "--json"]);
-    let outdatedOutput = "";
-    proc2.stdout.on("data", (d) => {
-      outdatedOutput += d.toString();
-    });
-    proc2.on("close", () => {
-      const outdatedOutputObj = JSON.parse(outdatedOutput);
-      const outdatedPackageNames = Object.keys(outdatedOutputObj);
-      
-      prComment += `### Outdated Packages (${outdatedPackageNames.length})\n`;
-      prComment += '| Package | Current | Wanted | Latest |\n';
-      prComment += `|--|--|--|--|\n`;
-      for (let outdatedPackageNamesn = 0; outdatedPackageNamesn < outdatedPackageNames.length; outdatedPackageNamesn++) {
-        if (elide > 0 && outdatedPackageNamesn > elide) {
-          break;
-        }
-        const outdatedPackage = outdatedPackageNames[outdatedPackageNamesn];
-        const { current, wanted, latest } = outdatedOutputObj[outdatedPackage];
-        prComment += `| ${outdatedPackage} | ${current} | ${wanted} | ${latest} |\n`;
-      }
-      prComment += '> to observe and update outdated packages, run `npm outdated`\n\n';
-
-      if (elide > 0) {
-        prComment += "> some results may be elided for brevity.";
-      }
-
-      if (shouldPrComment) {
-        if (!githubToken) {
-          throw new Error("GITHUB_TOKEN not found");
-        }
-        const prNumber = github.context.payload.pull_request?.number;
-        const octokit = github.getOctokit(githubToken);
-        const [owner, repo] = githubRepository.split("/");
-        octokit.issues.createComment({
-          body: prComment,
-          issue_number: prNumber!,
-          owner,
-          repo,
-        });
-      }
-    });
-  });
-} catch (error) {
-  core.setFailed(error.message);
+  Main().catch(err => { throw err });
+} catch (err) {
+  core.setFailed(err.message);
 }

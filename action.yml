@@ -9,9 +9,14 @@ inputs:
     description: provide 'true' or 'false' to control whether the action should comment the results back to the pull request.
     required: false
     default: "true"
-  elide:
-    description: provide the maximum number of vulerabilities and outdated packages to display in the PR comment.
+  fail-on-outdated:
+    description: provide 'true' to fail the workflow if any outdated packages are found
     required: false
+    default: "false"
+  fail-on-vulnerability:
+    description: provide 'true' to fail the workflow if any vulnerabilities are found
+    required: false
+    default: "false"
 outputs:
   total-dependencies:
     description: the total number of transitive dependencies your project has
