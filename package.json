@@ -1,19 +1,19 @@
 {
   "name": "@mhoc/npm-audit-action",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Mike Hockerman <mike@hockerman.com>",
+  "license": "UNLICENSE",
   "dependencies": {
-    "@actions/core": "^1.2.6",
+    "@actions/core": "^1.2.7",
     "@actions/github": "^4.0.0"
   },
   "devDependencies": {
-    "@types/node": "^14.14.37",
-    "typescript": "^4.2.3"
+    "@types/node": "^14.14.41",
+    "typescript": "^4.2.4"
   }
 }
