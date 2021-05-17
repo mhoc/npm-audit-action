@@ -111,6 +111,56 @@ async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
   };
 }
 
+// ----------------------------------------------
+// DepCheck Runner for:                         |
+// * unused production and development packages |
+// * missing dependencies                       |
+// ----------------------------------------------
+
+async function RunDepcheck(): Promise<{ markdown: string }> {
+  let markdown = "";
+  const {
+    dependencies: unusedProdPackages,
+    devDependencies: unusedDevPackages,
+    missing: missingPackages,
+  } = JSON.parse(await Exec("npx", [ "depcheck", "--json" ]));
+  markdown += `<details>\n`;
+  markdown += `<summary>Unused Production Dependencies: ${unusedProdPackages.length}</summary>\n\n`;
+  if (unusedProdPackages.length === 0) {
+    markdown += `No unused packages in production :smile:\n`;
+  } else {
+    for (const packageName of unusedProdPackages) {
+      markdown += `* ${packageName}\n`;
+    }
+    markdown += '> to generate this list locally, run `npx depcheck`\n';
+  }
+  markdown += `</details>\n`;
+  markdown += `<details>\n`;
+  markdown += `<summary>Unused Dev Dependencies: ${unusedDevPackages.length}</summary>\n\n`;
+  if (unusedDevPackages.length === 0) {
+    markdown += `No unused packages in development :smile:\n`;
+  } else {
+    for (const packageName of unusedDevPackages) {
+      markdown += `* ${packageName}\n`;
+    }
+    markdown += '> to generate this list locally, run `npx depcheck`\n';
+  }
+  markdown += `</details>\n`;
+  const missingPackageNames = Object.keys(missingPackages);
+  markdown += `<details>\n`;
+  markdown += `<summary>Missing Dependencies: ${missingPackageNames.length}</summary>\n\n`;
+  if (missingPackageNames.length === 0) {
+    markdown += `No missing packages :smile:\n`;
+  } else {
+    for (const packageName of missingPackageNames) {
+      markdown += `* ${packageName}\n`;
+    }
+    markdown += '> to generate this list locally, run `npx depcheck`\n';
+  }
+  markdown += `</details>\n`;
+  return { markdown };
+}
+
 // ------
 // Main |
 // ------
@@ -121,6 +171,8 @@ async function Main(): Promise<void> {
   markdown += auditMarkdown;
   const { markdown: outdatedMarkdown, outdated } = await RunOutdated();
   markdown += outdatedMarkdown;
+  const { markdown: depcheckMarkdown } = await RunDepcheck();
+  markdown += depcheckMarkdown;
   if (!elideAttribution) {
     markdown += '\n';
     markdown += '<p align="right">\n';
