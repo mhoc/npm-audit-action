@@ -119,7 +119,7 @@ async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
 
 async function RunDepcheck(): Promise<{ markdown: string }> {
   let markdown = "";
-  const {
+  let {
     dependencies: unusedProdPackages,
     devDependencies: unusedDevPackages,
     missing: missingPackages,
@@ -129,8 +129,9 @@ async function RunDepcheck(): Promise<{ markdown: string }> {
   if (unusedProdPackages.length === 0) {
     markdown += `No unused packages in production :smile:\n`;
   } else {
+    unusedProdPackages = unusedProdPackages.sort();
     for (const packageName of unusedProdPackages) {
-      markdown += `* ${packageName}\n`;
+      markdown += `* \`${packageName}\`\n`;
     }
     markdown += '> to generate this list locally, run `npx depcheck`\n';
   }
@@ -140,20 +141,22 @@ async function RunDepcheck(): Promise<{ markdown: string }> {
   if (unusedDevPackages.length === 0) {
     markdown += `No unused packages in development :smile:\n`;
   } else {
+    unusedDevPackages = unusedDevPackages.sort();
     for (const packageName of unusedDevPackages) {
-      markdown += `* ${packageName}\n`;
+      markdown += `* \`${packageName}\`\n`;
     }
     markdown += '> to generate this list locally, run `npx depcheck`\n';
   }
   markdown += `</details>\n`;
-  const missingPackageNames = Object.keys(missingPackages);
+  let missingPackageNames = Object.keys(missingPackages);
   markdown += `<details>\n`;
   markdown += `<summary>Missing Dependencies: ${missingPackageNames.length}</summary>\n\n`;
   if (missingPackageNames.length === 0) {
     markdown += `No missing packages :smile:\n`;
   } else {
+    missingPackageNames = missingPackageNames.sort();
     for (const packageName of missingPackageNames) {
-      markdown += `* ${packageName}\n`;
+      markdown += `* \`${packageName}\`\n`;
     }
     markdown += '> to generate this list locally, run `npx depcheck`\n';
   }
