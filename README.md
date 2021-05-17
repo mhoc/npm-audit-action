@@ -24,7 +24,7 @@ jobs:
           node-version: "12.x"
       - run: npm ci
       - name: Run Audit
-        uses: mhoc/npm-audit-action@master
+        uses: mhoc/npm-audit-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
