@@ -1,19 +1,16 @@
 {
   "name": "@mhoc/npm-audit-action",
-  "version": "0.2.0",
-  "description": "",
+  "version": "3.0.0",
+  "description": "a github action which runs an analysis of your nodejs dependencies and comments the results back to the pr",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Mike Hockerman <mike@hockerman.com>",
   "license": "UNLICENSE",
   "dependencies": {
-    "@actions/core": "^1.2.7",
-    "@actions/github": "^4.0.0"
+    "@actions/core": "^1.3.0",
+    "@actions/github": "^5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^15.3.0",
-    "typescript": "^4.2.4"
+    "@types/node": "^15.12.1",
+    "typescript": "^4.3.2"
   }
 }

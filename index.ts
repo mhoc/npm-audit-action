@@ -186,7 +186,7 @@ async function Main(): Promise<void> {
     const prNumber = github.context.payload.pull_request!.number;
     const octokit = github.getOctokit(githubToken!);
     const [owner, repo] = githubRepository!.split("/");
-    await octokit.issues.createComment({
+    await octokit.rest.issues.createComment({
       body: markdown,
       issue_number: prNumber!,
       owner,
