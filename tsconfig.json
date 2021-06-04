@@ -15,8 +15,9 @@
     "strict": true,
     "target": "es2017",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "outDir": "dist"
   },
   "exclude": ["node_modules"],
-  "include": ["*.ts"]
+  "include": ["src/*.ts"]
 }

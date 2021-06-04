@@ -2,7 +2,7 @@
   "name": "@mhoc/npm-audit-action",
   "version": "3.0.0",
   "description": "a github action which runs an analysis of your nodejs dependencies and comments the results back to the pr",
-  "main": "index.js",
+  "main": "dist/index.js",
   "author": "Mike Hockerman <mike@hockerman.com>",
   "license": "UNLICENSE",
   "dependencies": {

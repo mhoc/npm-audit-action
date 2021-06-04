@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
-import * as child from "child_process";
+
+import { Exec } from "./Exec";
 
 // -----------------------
 // Environment Variables |
@@ -19,18 +20,9 @@ const elideAttribution = core.getInput('elide-attribution') === 'true';
 const failOnOutdated = core.getInput('fail-on-outdated') === 'true';
 const failOnVulnerability = core.getInput('fail-on-vulnerability') === 'true';
 
-// ---------------------------------
-// Exec helper to run sub-commands |
-// ---------------------------------
-
-function Exec(command: string, args: string[]): Promise<string> {
-  return new Promise((res, rej) => {
-    const proc = child.spawn(command, args);
-    let output = "";
-    proc.stdout.on("data", (d) => { output += d.toString() });
-    proc.on("close", () => res(output));
-  });
-}
+// -----------------------------------------------------------
+// Sub-Commands which we run to get data about dependencies. |
+// -----------------------------------------------------------
 
 // ------------------------
 // Env & Input Validation |
@@ -57,7 +49,9 @@ if (!githubToken) {
 
 async function RunAudit(): Promise<{ markdown: string, vulnerabilities: number }> {
   let markdown = "";
-  const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(await Exec("npm", [ "audit", "--json" ]));
+  const { advisories, metadata: { totalDependencies, vulnerabilities } } = JSON.parse(
+    (await Exec("npm", [ "audit", "--json" ])).stdout
+  );
   core.setOutput('total-dependencies', totalDependencies);
   markdown += `Total Dependencies: **${totalDependencies}**\n`;
   const totalVulnerabilities = vulnerabilities.low + vulnerabilities.moderate + vulnerabilities.high + vulnerabilities.critical;
@@ -89,7 +83,9 @@ async function RunAudit(): Promise<{ markdown: string, vulnerabilities: number }
 
 async function RunOutdated(): Promise<{ markdown: string, outdated: number }> {
   let markdown = "";
-  const outdatedOutput = JSON.parse(await Exec("npm", [ "outdated", "--json" ]));
+  const outdatedOutput = JSON.parse(
+    (await Exec("npm", [ "outdated", "--json" ])).stdout
+  );
   const outdatedPackages = Object.keys(outdatedOutput);
   markdown += `<details>\n`;
   markdown += `<summary>Outdated Packages: ${outdatedPackages.length}</summary>\n\n`;
@@ -123,7 +119,7 @@ async function RunDepcheck(): Promise<{ markdown: string }> {
     dependencies: unusedProdPackages,
     devDependencies: unusedDevPackages,
     missing: missingPackages,
-  } = JSON.parse(await Exec("npx", [ "depcheck", "--json" ]));
+  } = JSON.parse((await Exec("npx", [ "depcheck", "--json" ])).stdout);
   markdown += `<details>\n`;
   markdown += `<summary>Unused Production Dependencies: ${unusedProdPackages.length}</summary>\n\n`;
   if (unusedProdPackages.length === 0) {
