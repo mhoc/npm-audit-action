@@ -1,16 +1,21 @@
 {
   "name": "@mhoc/npm-audit-action",
-  "version": "3.0.0",
   "description": "a github action which runs an analysis of your nodejs dependencies and comments the results back to the pr",
-  "main": "dist/index.js",
+  "private": true,
+  "version": "4.0.0",
   "author": "Mike Hockerman <mike@hockerman.com>",
-  "license": "UNLICENSE",
+  "license": "Unlicense",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mhoc/npm-audit-action"
+  },
+  "main": "dist/index.js",
   "dependencies": {
-    "@actions/core": "^1.3.0",
-    "@actions/github": "^5.0.0"
+    "@actions/core": "1.6.0",
+    "@actions/github": "5.0.0"
   },
   "devDependencies": {
-    "@types/node": "^15.12.1",
-    "typescript": "^4.3.2"
+    "@types/node": "16.11.6",
+    "typescript": "4.4.4"
   }
 }

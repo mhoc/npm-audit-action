@@ -205,6 +205,6 @@ async function Main(): Promise<void> {
 
 try {
   Main().catch(err => { throw err });
-} catch (err) {
+} catch (err: any) {
   core.setFailed(err.message);
 }
